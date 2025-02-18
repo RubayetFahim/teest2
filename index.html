@@ -5,123 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Social Media Video Player</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            display: flex;
-            max-width: 1200px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-        }
-        .video-section {
-            flex: 2;
-            padding-right: 20px;
-        }
-        .subtitle-section {
-            flex: 1;
-            background: #eaeaea;
-            padding: 10px;
-            border-radius: 10px;
-            text-align: left;
-        }
-        video, iframe {
-            width: 100%;
-            height: 480px;
-            border: none;
-            background: black;
-        }
-        input {
-            width: 80%;
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 16px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        .subtitle-display {
-            height: 100px;
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 18px;
-            text-align: center;
-            overflow: hidden;
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div id="loginPage" class="container">
-        <h2>Login with Google</h2>
-        <div id="g_id_onload"
-            data-client_id="365367985791-lsrdiflf30sv90t2v4g9hmk3b7ujhf2u.apps.googleusercontent.com"
-            data-callback="handleCredentialResponse">
+<body class="bg-gray-100 font-sans text-gray-900">
+
+    <!-- Login Page -->
+    <div id="loginPage" class="flex justify-center items-center min-h-screen">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-sm">
+            <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+            <div id="g_id_onload"
+                data-client_id="365367985791-lsrdiflf30sv90t2v4g9hmk3b7ujhf2u.apps.googleusercontent.com"
+                data-callback="handleCredentialResponse">
+            </div>
+            <div class="g_id_signin" data-type="standard"></div>
         </div>
-        <div class="g_id_signin" data-type="standard"></div>
     </div>
     
+    <!-- Main Page -->
     <div id="mainPage" class="hidden">
-        <h2>Social Media Video Player</h2>
-        <button onclick="logout()">Logout</button>
-        <div class="container">
-            <div class="video-section">
-                <h2>Social Media Video Player</h2>
-                <div id="videoContainer">
-                    <iframe id="videoFrame" src="" allowfullscreen></iframe>
-                </div>
-                <input type="text" id="videoUrl" placeholder="Paste video link here...">
-                <button onclick="playVideo()">Play</button>
+        <div class="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between">
+            <h2 class="text-2xl font-bold">SignMate</h2>
+            <div class="flex items-center space-x-3">
+                <img id="userImage" src="" alt="User" class="w-10 h-10 rounded-full">
+                <span id="userName" class="text-lg">User</span>
             </div>
-            <div class="subtitle-section">
-                <h3>Subtitles</h3>
-                <div id="subtitleDisplay" class="subtitle-display">No subtitles available</div>
+            <button onclick="logout()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Logout</button>
+        </div>
+
+        <div class="flex max-w-screen-xl mx-auto bg-white p-6 rounded-lg shadow-md">
+            <div class="flex-2 pr-6">
+                <h2 class="text-2xl font-semibold mb-4">SignMate</h2>
+                <div id="videoContainer" class="mb-4">
+                    <iframe id="videoFrame" class="w-full h-80" src="" allowfullscreen></iframe>
+                </div>
+                <input type="text" id="videoUrl" placeholder="Paste video link here..." class="w-full p-3 mb-4 border border-gray-300 rounded-md">
+                <button onclick="playVideo()" class="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700">Play</button>
+            </div>
+            <div class="flex-1 bg-gray-200 p-4 rounded-lg">
+                <h3 class="text-xl font-semibold mb-4">Subtitles</h3>
+                <div id="subtitleDisplay" class="bg-white p-4 rounded-md text-center text-lg">No subtitles available</div>
             </div>
         </div>
     </div>
-    
+
     <script>
         function handleCredentialResponse(response) {
             console.log("Google Auth Response:", response);
-            localStorage.setItem("user", response.credential);
+            const userInfo = parseJwt(response.credential);
+            localStorage.setItem("user", JSON.stringify(userInfo));
             showMainPage();
         }
-        
+
+        function parseJwt(token) {
+            let base64Url = token.split(".")[1];
+            let base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+            let jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split("")
+                    .map(function (c) {
+                        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+                    })
+                    .join("")
+            );
+            return JSON.parse(jsonPayload);
+        }
+
         function showMainPage() {
+            let user = JSON.parse(localStorage.getItem("user"));
+            if (user) {
+                document.getElementById("userName").innerText = user.name;
+                document.getElementById("userImage").src = user.picture;
+            }
             document.getElementById("loginPage").classList.add("hidden");
             document.getElementById("mainPage").classList.remove("hidden");
         }
-        
+
         function logout() {
             localStorage.removeItem("user");
             window.location.reload();
         }
-        
+
         window.onload = function () {
             if (localStorage.getItem("user")) {
                 showMainPage();
             }
-        }
-        
+        };
+
         function playVideo() {
             let url = document.getElementById('videoUrl').value;
             let videoContainer = document.getElementById('videoContainer');
